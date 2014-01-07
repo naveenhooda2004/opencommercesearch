@@ -63,10 +63,7 @@ public class Product {
     private int listRank;
 
     @JsonProperty
-    private int reviewCount;
-
-    @JsonProperty
-    private float reviewAverage;
+    private CustomerReview customerReviews;
 
     @JsonProperty
     private float bayesianReviewAverage;
@@ -190,22 +187,6 @@ public class Product {
         this.listRank = listRank;
     }
 
-    public int getReviewCount() {
-        return reviewCount;
-    }
-
-    public void setReviewCount(int reviewCount) {
-        this.reviewCount = reviewCount;
-    }
-
-    public float getReviewAverage() {
-        return reviewAverage;
-    }
-
-    public void setReviewAverage(float reviewAverage) {
-        this.reviewAverage = reviewAverage;
-    }
-
     public float getBayesianReviewAverage() {
         return bayesianReviewAverage;
     }
@@ -250,6 +231,14 @@ public class Product {
             skus = new ArrayList<Sku>();
         }
         skus.add(sku);
+    }
+
+    public void setCustomerReviews(CustomerReview customerReviews) {
+        this.customerReviews = customerReviews;
+    }
+
+    public CustomerReview getCustomerReviews() {
+        return customerReviews;
     }
 
 }

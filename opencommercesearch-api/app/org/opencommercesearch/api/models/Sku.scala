@@ -38,7 +38,8 @@ case class Sku(
   var image: Option[Image],
   var countries: Option[Seq[Country]],
   var isPastSeason: Option[Boolean],
-  var colorFamily: Option[Array[String]],
+  var colorFamily: Option[String],
+  var color: Option[String],
   var isRetail: Option[Boolean],
   var isCloseout: Option[Boolean],
   var isOutlet: Option[Boolean],
@@ -46,7 +47,7 @@ case class Sku(
   var catalogs: Option[Seq[String]],
   var customSort: Option[Int]) {
 
-  def this() = this(None, None, None, None, None, None, None, None, None, None, None, None, None)
+  def this() = this(None, None, None, None, None, None, None, None, None, None, None, None, None, None)
 
   @Field
   def setId(id: String) : Unit = { this.id = Option.apply(id) }
@@ -119,7 +120,12 @@ case class Sku(
 
   @Field
   def setColorFamily(colorFamily: Array[String]) {
-    this.colorFamily = Option.apply(colorFamily)
+    this.colorFamily = Option.apply(colorFamily(0))
+  }
+  
+  @Field("color")
+  def setColor(color: Array[String]) {
+    this.color = Option.apply(color(0))
   }
   
   @Field
