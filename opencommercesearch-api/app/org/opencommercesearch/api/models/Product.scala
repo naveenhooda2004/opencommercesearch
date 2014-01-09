@@ -42,6 +42,8 @@ case class Product (
   var brand: Option[Brand],
   var gender: Option[String],
   var sizingChart: Option[String],
+  var lowPrice: Option[Float],
+  var highPrice: Option[Float],
   var detailImages: Option[Seq[Image]],
   var bulletPoints: Option[Seq[String]],
   var attributes: Option[Seq[Attribute]],
@@ -55,10 +57,12 @@ case class Product (
   var categories: Option[Seq[String]],
   var skus: Option[Seq[Sku]])
 {
-  def this() = this(None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None)
+  def this() = this(None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None)
 
   @Field
   def setId(id: String) : Unit = { this.id = Option.apply(id) }
+  
+  def getId : String = { id.get }
 
   @Field
   def setTitle(title: String) : Unit = { this.title = Option.apply(title) }
@@ -88,6 +92,10 @@ case class Product (
   @Field
   def setGender(gender: String) : Unit = { this.gender = Option.apply(gender) }
   
+  def setLowPrice(lowPrice: Float) : Unit = { this.lowPrice = Option.apply(lowPrice) }
+
+  def setHighPrice(highPrice: Float) : Unit = { this.highPrice = Option.apply(highPrice) }
+
   @Field
   def setSizingChart(sizingChart: String) : Unit = { this.sizingChart = Option.apply(sizingChart) } 
   

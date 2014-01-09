@@ -34,6 +34,7 @@ import org.opencommercesearch.api.service.CategoryService
 import org.apache.solr.client.solrj.request.AsyncUpdateRequest
 import org.apache.solr.client.solrj.response.{UpdateResponse, QueryResponse}
 import org.apache.solr.client.solrj.SolrQuery
+import org.apache.solr.common.util.NamedList
 import org.apache.solr.common.SolrDocument
 import org.apache.commons.lang3.StringUtils
 import com.wordnik.swagger.annotations._
@@ -91,11 +92,11 @@ object ProductController extends BaseController {
     })
 
     val productIdQuery = s"productId:$id"
-    var skuFuture: Future[(Int, util.List[Product])] = null
+    var skuFuture: Future[(Int, util.List[Product], NamedList[Object])] = null
 
     if (searchSkus) {
       val skuQuery = withDefaultFields(withSearchCollection(withPagination(new SolrQuery(productIdQuery)), preview), site, None)
-      skuQuery.set("group", false)
+      skuQuery.set("group", true)
       skuQuery.setFacet(false)
       initQueryParams(skuQuery, site, showCloseoutProducts = true, null)
 
@@ -103,11 +104,12 @@ object ProductController extends BaseController {
         processSearchResults(productIdQuery, response)
       })
     } else {
-      skuFuture = Future.successful((0, null))
+      skuFuture = Future.successful((0, null, null))
     }
 
-    val future = productFuture zip skuFuture map { case (product, (found, products)) =>
+    val future = productFuture zip skuFuture map { case (product, (found, products, groupSummary)) =>
       if (product != null) {
+        processGroupSummary(groupSummary, product)
         if (products != null) {
           product.skus = Option.apply(JIterableWrapper(products).toSeq.map( p => p.skus.get(0) ))
         }
@@ -127,14 +129,33 @@ object ProductController extends BaseController {
     withErrorHandling(future, s"Cannot retrieve product with id [$id]")
   }
 
+  /*
+   * Helper method to process group summary
+   * @param groupSummary from solr response
+   * @param product from the realtimehandler
+   *
+   */
+  private def processGroupSummary(groupSummary: NamedList[Object], product: Product)(implicit request: Request[AnyContent]) : Unit = {
+    var productSummary = groupSummary.get("productId").asInstanceOf[NamedList[Object]].get(product.getId).asInstanceOf[NamedList[Object]];
+    if(productSummary != null) {
+      val country_ = country(request.acceptLanguages)
+      var listPrice = productSummary.get("listPrice"+country_).asInstanceOf[NamedList[Object]];
+      if(listPrice != null) {
+        product.setLowPrice(listPrice.get("min").asInstanceOf[Float]);
+        product.setHighPrice(listPrice.get("max").asInstanceOf[Float]);
+      }
+    }
+  }
+  
   /**
    * Helper method to process search results
    * @param q the Solr query
    * @param response the Solr response
    * @return a tuple with the total number of SKUs found and the list of SKUs in the response
    */
-  private def processSearchResults(q: String, response: QueryResponse) : (Int, util.List[Product]) = {
+  private def processSearchResults(q: String, response: QueryResponse) : (Int, util.List[Product], NamedList[Object]) = {
     val groupResponse = response.getGroupResponse
+    val groupSummary = response.getResponse.get("groups_summary").asInstanceOf[NamedList[Object]];
     if (groupResponse != null) {
       val commands = groupResponse.getValues
 
@@ -149,17 +170,17 @@ object ProductController extends BaseController {
               product.skus = Option.apply(JIterableWrapper(solrServer.binder.getBeans(classOf[Sku], documentList)).toSeq)
               products.add(product)
             }
-            (command.getNGroups, products)
+            (command.getNGroups, products, groupSummary)
           } else {
-            (0, util.Collections.emptyList())
+            (0, util.Collections.emptyList(), null)
           }
         } else {
           Logger.debug(s"Unexpected response found for query $q")
-          (0, null)
+          (0, null, null)
         }
       } else {
         Logger.debug(s"Unexpected response found for query $q")
-        (0, null)
+        (0, null, null)
       }
     } else {
       val documentList = response.getResults
@@ -172,7 +193,7 @@ object ProductController extends BaseController {
         product.skus = Option.apply(Seq(solrServer.binder.getBean(classOf[Sku], doc)))
         products.add(product)
       }
-      (documentList.getNumFound.toInt, products)
+      (documentList.getNumFound.toInt, products, groupSummary)
     }
   }
 
@@ -205,7 +226,7 @@ object ProductController extends BaseController {
 
     val future = solrServer.query(query).map( response => {
       if (query.getRows > 0) {
-        val (found, skus) = processSearchResults(q, response)
+        val (found, skus, groupSummary) = processSearchResults(q, response)
         if (skus != null) {
           if (skus.size() > 0) {
             Ok(Json.obj(
