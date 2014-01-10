@@ -33,9 +33,11 @@ import org.apache.commons.lang3.StringUtils
 import org.opencommercesearch.api.service.CategoryService
 
 import ProductList._
+import org.jongo.marshall.jackson.oid.Id
+import com.fasterxml.jackson.annotation.JsonCreator
 
 case class Product (
-  var id: Option[String],
+  @Id var id: Option[String],
   var title: Option[String],
   var description: Option[String],
   var shortDescription: Option[String],
@@ -57,7 +59,10 @@ case class Product (
   var categories: Option[Seq[String]],
   var skus: Option[Seq[Sku]])
 {
-  def this() = this(None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None)
+  @JsonCreator
+  def this() = this(None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None)
+
+  def getId() : String = { this.id.get }
 
   @Field
   def setId(id: String) : Unit = { this.id = Option.apply(id) }
@@ -164,7 +169,7 @@ case class Product (
 
   @Field("bayesianReviewAverage")
   def setBayesianReviewAverage(bayesianReviewAverage: Float) : Unit = { this.bayesianReviewAverage = Option.apply(bayesianReviewAverage) }
-  
+    
   @Field
   def sethasFreeGift(freeGifts: util.List[String]) : Unit = {
     this.hasFreeGift = Some(JIterableWrapper(freeGifts).map( { freeGift => 
