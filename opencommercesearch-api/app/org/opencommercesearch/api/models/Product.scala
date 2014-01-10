@@ -60,14 +60,12 @@ case class Product (
   var skus: Option[Seq[Sku]])
 {
   @JsonCreator
-  def this() = this(None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None)
+  def this() = this(None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None)
 
   def getId() : String = { this.id.get }
 
   @Field
   def setId(id: String) : Unit = { this.id = Option.apply(id) }
-  
-  def getId : String = { id.get }
 
   @Field
   def setTitle(title: String) : Unit = { this.title = Option.apply(title) }
