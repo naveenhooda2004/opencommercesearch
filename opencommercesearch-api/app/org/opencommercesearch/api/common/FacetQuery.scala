@@ -1,4 +1,4 @@
-package org.opencommercesearch.api.models
+package org.opencommercesearch.api.common
 
 /*
 * Licensed to OpenCommerceSearch under one
@@ -19,25 +19,21 @@ package org.opencommercesearch.api.models
 * under the License.
 */
 
-import play.api.libs.json.Json
-import com.fasterxml.jackson.annotation.JsonCreator
-import com.fasterxml.jackson.annotation.JsonProperty
+import org.apache.solr.client.solrj.SolrQuery
 
 /**
- * A image model
- * @param title is the title for this image
- * @param url is the url of the image
+ * This trait provides subclasses with functionality to
+ * add to the solr query facets
  *
- * @author rmerizalde
+ * @author gsegura
  */
-case class Image(
-    @JsonProperty("title") var title: Option[String], 
-    @JsonProperty("url")var url: Option[String]) {
-  @JsonCreator
-  def this() = this(None, None)
-}
+trait FacetQuery {
 
-object Image {    Tuple2
-  implicit val readsImage = Json.reads[Image]
-  implicit val writesImage = Json.writes[Image]
+  def withFieldFacet(facetField: String, facetLimit: Int, rows:Int, query: SolrQuery) : SolrQuery = {
+    query.setRows(rows);
+    query.setFacet(true)
+    query.addFacetField(facetField)
+    query.setFacetLimit(facetLimit);
+    query.setFacetMinCount(1);
+  }
 }
