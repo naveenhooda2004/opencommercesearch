@@ -51,6 +51,9 @@ public class Sku {
     private String colorFamily;
 
     @JsonProperty
+    private String color;
+    
+    @JsonProperty
     private boolean isRetail;
 
     @JsonProperty
@@ -116,6 +119,14 @@ public class Sku {
         this.isPastSeason = isPastSeason;
     }
 
+    public String getColor() {
+       return color;
+    }
+
+    public void setColor(String color) {
+       this.color = color;
+    }
+
     public String getColorFamily() {
         return colorFamily;
     }
@@ -123,7 +134,7 @@ public class Sku {
     public void setColorFamily(String colorFamily) {
         this.colorFamily = colorFamily;
     }
-
+    
     @JsonIgnore
     public boolean isRetail() {
         return isRetail;

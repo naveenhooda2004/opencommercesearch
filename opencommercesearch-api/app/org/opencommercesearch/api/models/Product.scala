@@ -44,14 +44,15 @@ case class Product (
   var brand: Option[Brand],
   var gender: Option[String],
   var sizingChart: Option[String],
+  var lowPrice: Option[Float],
+  var highPrice: Option[Float],
   var detailImages: Option[Seq[Image]],
   var bulletPoints: Option[Seq[String]],
   var attributes: Option[Seq[Attribute]],
   var features: Option[Seq[Attribute]],
   var listRank: Option[Int],
-  var reviewCount: Option[Int],
-  var reviewAverage: Option[Double],
-  var bayesianReviewAverage: Option[Double],
+  var customerReviews: Option[CustomerReview],
+  var bayesianReviewAverage: Option[Float],
   // has free gift by catalog
   var hasFreeGift: Option[Map[String, Boolean]],
   var isOutOfStock: Option[Boolean],
@@ -59,7 +60,7 @@ case class Product (
   var skus: Option[Seq[Sku]])
 {
   @JsonCreator
-  def this() = this(None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None)
+  def this() = this(None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None)
 
   def getId() : String = { this.id.get }
 
@@ -94,6 +95,10 @@ case class Product (
   @Field
   def setGender(gender: String) : Unit = { this.gender = Option.apply(gender) }
   
+  def setLowPrice(lowPrice: Float) : Unit = { this.lowPrice = Option.apply(lowPrice) }
+
+  def setHighPrice(highPrice: Float) : Unit = { this.highPrice = Option.apply(highPrice) }
+
   @Field
   def setSizingChart(sizingChart: String) : Unit = { this.sizingChart = Option.apply(sizingChart) } 
   
@@ -139,11 +144,27 @@ case class Product (
   }
   
   @Field("reviews")
-  def setReviewCount(reviewCount: Int) : Unit = { this.reviewCount = Option.apply(reviewCount) }
+  def setReviewCount(reviewCount: Int) : Unit = {
+    if(customerReviews.isEmpty) {
+      customerReviews = Some(new CustomerReview()) 
+    }
+    for (reviews <- customerReviews) {
+      reviews.count = Option.apply(reviewCount) 
+    }
+  }
 
   @Field("reviewAverage")
-  def setReviewAverage(reviewAverage: Float) : Unit = { this.reviewAverage = Option.apply(reviewAverage) }
-  
+  def setReviewAverage(reviewAverage: Float) : Unit = { 
+    if(customerReviews.isEmpty) {
+      customerReviews = Some(new CustomerReview()) 
+    }
+
+    for (reviews <- customerReviews) {
+      reviews.average = Option.apply(reviewAverage) 
+    }  
+    
+  }
+
   @Field("bayesianReviewAverage")
   def setBayesianReviewAverage(bayesianReviewAverage: Float) : Unit = { this.bayesianReviewAverage = Option.apply(bayesianReviewAverage) }
     
@@ -193,9 +214,12 @@ case class ProductList(products: Seq[Product], feedTimestamp: Long) {
         }
         for (features <- product.features) { setAttributes("features", productDoc, features) }
         for (attributes <- product.attributes) { setAttributes("attributes", productDoc, attributes) }
-        for (reviewAverage <- product.reviewAverage; reviews <- product.reviewCount) {
-          productDoc.setField("reviews", reviews)
-          productDoc.setField("reviewAverage", reviewAverage)
+        
+        for (reviews <- product.customerReviews) {
+          for (average <- reviews.average; count <- reviews.count) {
+            productDoc.setField("reviews", count)
+            productDoc.setField("reviewAverage", average)
+          }
         }
         for (sizingChart <- product.sizingChart) { productDoc.setField("sizingChart", sizingChart) }
         for (detailImages <- product.detailImages) {
@@ -237,6 +261,7 @@ case class ProductList(products: Seq[Product], feedTimestamp: Long) {
 
             for (year <- sku.year) { doc.setField("year", year) }
             for (season <- sku.season) { doc.setField("season", season) }
+            for (color <- sku.color) { doc.setField("color", color) }
             for (colorFamily <- sku.colorFamily) { doc.setField("colorFamily", colorFamily) }
             for (catalogs <- sku.catalogs) { service.loadCategoryPaths(doc, product, catalogs, preview) }
 
@@ -244,11 +269,14 @@ case class ProductList(products: Seq[Product], feedTimestamp: Long) {
               for (sizeName <- size.name) { doc.setField("size", sizeName) }
               for (scale <- size.scale) { doc.setField("scale", scale) }
             }
-
-            for (reviewAverage <- product.reviewAverage; bayesianReviewAverage <- product.bayesianReviewAverage;
-                 reviews <- product.reviewCount) {
-              doc.setField("reviews", reviews)
-              doc.setField("reviewAverage", reviewAverage)
+            
+            for(reviews <- product.customerReviews) {
+              for (average <- reviews.average; count <- reviews.count) {
+                doc.setField("reviews", count)
+                doc.setField("reviewAverage", average)
+              } 
+            }
+            for (bayesianReviewAverage <- product.bayesianReviewAverage) {
               doc.setField("bayesianReviewAverage", bayesianReviewAverage)
             }
 

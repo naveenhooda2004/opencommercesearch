@@ -47,7 +47,7 @@ trait Storage[T] {
    * @param fields is the list of fields to return
    * @return
    */
-  def findProduct(id: String, country: String, fields: Seq[String]) : Future[Product]
+  def findProductByIds(id: Array[String], country: String, fields: Seq[String]) : Future[Iterable[Product]]
 
   /**
    * Finds the product with the given id for the given site. If the product exists but none of its skus are assigned to
@@ -59,7 +59,7 @@ trait Storage[T] {
    * @param fields is the list of fields to return
    * @return
    */
-  def findProduct(id: String, site: String, country: String, fields: Seq[String]) : Future[Product]
+  def findProductByIds(id: Array[String], site: String, country: String, fields: Seq[String]) : Future[Iterable[Product]]
 
   /**
    * Saves the given list of products. Returns the result of the last write

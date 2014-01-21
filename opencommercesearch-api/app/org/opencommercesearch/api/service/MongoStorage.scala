@@ -91,7 +91,7 @@ class MongoStorage(mongo: MongoClient) extends Storage[WriteResult] {
       ids.foreach(t => query.append("{_id:#},"))
       query.setLength(query.length - 1)
       query.append("]}")
-
+      
       val products = productCollection.find(query.toString(), ids.map(t => t._1):_*)
         .projection(projection(fields, ids.size), ids.map(t => t._2):_*).as(classOf[Product])
       products.map(p => filterSearchProduct(country, p))
@@ -99,35 +99,61 @@ class MongoStorage(mongo: MongoClient) extends Storage[WriteResult] {
   }
 
 
-  def findProduct(id: String, country: String, fields: Seq[String]) : Future[Product] = {
+  def findProductByIds(ids: Array[String], country: String, fields: Seq[String]) : Future[Iterable[Product]] = {
     Future {
       val productCollection = jongo.getCollection("products")
-      filterSkus(country, productCollection.findOne("{_id:#, skus.countries.code:#}", id, country).projection(projection(fields)).as(classOf[Product]))
+      val query = new StringBuilder(128)
+        .append("{ skus.countries.code:#, $or: [")
+      ids.foreach(t => query.append("{_id:#},"))
+      query.setLength(query.length - 1)
+      query.append("]}")
+      var parameters = new java.util.LinkedList[String];
+      parameters.add(country);
+      for(id <- ids) {
+        parameters.add(id)
+      }
+      filterSkus(country, productCollection.find(query.toString(), parameters:_*).projection(projection(fields)).as(classOf[Product]))
     }
   }
 
-  def findProduct(id: String, site: String, country: String, fields: Seq[String]) : Future[Product] = {
+  def findProductByIds(ids: Array[String], site: String, country: String, fields: Seq[String]) : Future[Iterable[Product]] = {
     Future {
       val productCollection = jongo.getCollection("products")
-      filterSkus(country, productCollection.findOne("{_id:#, skus.catalogs:#, skus.countries.code:#}", id, site, country).projection(projection(fields)).as(classOf[Product]))
+      val query = new StringBuilder(128)
+        .append("{ skus.catalogs:#, skus.countries.code:#, $or: [")
+      ids.foreach(t => query.append("{_id:#},"))
+      query.setLength(query.length - 1)
+      query.append("]}")
+      var parameters = new java.util.LinkedList[String];
+      parameters.add(site);
+      parameters.add(country);
+      for(id <- ids) {
+        parameters.add(id)
+      }
+      filterSkus(country, productCollection.find(query.toString(), parameters:_*).projection(projection(fields)).as(classOf[Product]))
     }
   }
 
   /**
    * Filters the skus by the given country
    * @param country the country to filter by
-   * @param product the product which skus will be filtered
+   * @param Iterable[products] the products which skus will be filtered
    * @return the product
    */
-  private def filterSkus(country: String, product: Product) : Product = {
-    if (product != null) {
+  private def filterSkus(country: String, products: Iterable[Product]) : Iterable[Product] = {
+    var arrProducts = new java.util.ArrayList[Product]
+    for(product <- products) {
+      arrProducts.add(product)
+    }
+    
+    for(product <- arrProducts) {
       for (skus <- product.skus) {
         product.skus = Some(skus.filter((s: Sku) => {
           flattenCountries(country, s)
         }))
       }
     }
-    product
+    arrProducts.iterator.toIterable
   }
 
   private def filterSearchProduct(country: String, product: Product) : Product = {
