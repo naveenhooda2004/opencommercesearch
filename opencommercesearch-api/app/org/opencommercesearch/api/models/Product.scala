@@ -42,8 +42,6 @@ case class Product (
   @JsonProperty("brand") var brand: Option[Brand],
   @JsonProperty("gender") var gender: Option[String],
   @JsonProperty("sizingChart") var sizingChart: Option[String],
-  @JsonProperty ("lowPrice") var lowPrice: Option[Float],
-  @JsonProperty ("highPrice") var highPrice: Option[Float],
   @JsonProperty("detailImages") var detailImages: Option[Seq[Image]],
   @JsonProperty("bulletPoints") var bulletPoints: Option[Seq[String]],
   @JsonProperty("attributes") var attributes: Option[Seq[Attribute]],
@@ -58,7 +56,7 @@ case class Product (
   @JsonProperty("skus") var skus: Option[Seq[Sku]])
 {
   @JsonCreator
-  def this() = this(None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None)
+  def this() = this(None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None)
 
   def getId() : String = { this.id.get }
 
@@ -93,10 +91,6 @@ case class Product (
   @Field
   def setGender(gender: String) : Unit = { this.gender = Option.apply(gender) }
   
-  def setLowPrice(lowPrice: Float) : Unit = { this.lowPrice = Option.apply(lowPrice) }
-
-  def setHighPrice(highPrice: Float) : Unit = { this.highPrice = Option.apply(highPrice) }
-
   @Field
   def setSizingChart(sizingChart: String) : Unit = { this.sizingChart = Option.apply(sizingChart) } 
   
@@ -152,7 +146,7 @@ case class Product (
   }
 
   @Field("reviewAverage")
-  def setReviewAverage(reviewAverage: Float) : Unit = { 
+  def setReviewAverage(reviewAverage: Double) : Unit = { 
     if(customerReviews.isEmpty) {
       customerReviews = Some(new CustomerReview()) 
     }
@@ -164,7 +158,7 @@ case class Product (
   }
 
   @Field("bayesianReviewAverage")
-  def setBayesianReviewAverage(bayesianReviewAverage: Float) : Unit = { this.bayesianReviewAverage = Option.apply(bayesianReviewAverage) }
+  def setBayesianReviewAverage(bayesianReviewAverage: Double) : Unit = { this.bayesianReviewAverage = Option.apply(bayesianReviewAverage) }
     
   @Field
   def sethasFreeGift(freeGifts: util.List[String]) : Unit = {

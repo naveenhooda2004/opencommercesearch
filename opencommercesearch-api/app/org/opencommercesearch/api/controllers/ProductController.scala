@@ -25,6 +25,8 @@ import play.api.Logger
 import play.api.libs.json.{JsError, Json}
 import play.api.libs.json.JsArray
 import play.api.libs.json.JsString
+import play.api.libs.json.JsObject
+import play.api.libs.json.JsValue
 import scala.concurrent.Future
 import scala.collection.JavaConversions._
 import scala.collection.mutable.Map
@@ -45,6 +47,7 @@ import com.wordnik.swagger.annotations._
 import javax.ws.rs.{QueryParam, PathParam}
 
 import scala.collection.convert.Wrappers.JIterableWrapper
+import scala.collection.mutable.ArrayBuffer
 import org.apache.commons.lang3.StringUtils
 import org.apache.solr.common.util.NamedList
 import org.opencommercesearch.api.common.{FilterQuery, FacetHandler}
@@ -108,18 +111,22 @@ object ProductController extends BaseController {
   }
 
   private def processGroupSummary(groupSummary: NamedList[Object]) : JsArray = {
-    val groupArray = new JsArray();
+    val groups = ArrayBuffer[JsObject]()
     var productSummary = groupSummary.get("productId").asInstanceOf[NamedList[Object]];
     JIterableWrapper(productSummary).map(value => {
        var parameterSummary = value.getValue.asInstanceOf[NamedList[Object]];
+       val productSeq = ArrayBuffer[(String,JsValue)]()
        JIterableWrapper(parameterSummary).map(value1 => {
          var statSummary = value1.getValue.asInstanceOf[NamedList[Object]];
+         val parameterSeq = ArrayBuffer[(String,JsString)]()
          JIterableWrapper(statSummary).map(value2 => {
-           Json.obj(value2.getKey->value2.getValue.toString)
+           parameterSeq += ((value2.getKey, new JsString(value2.getValue.toString)))
          })
+         productSeq += ((value1.getKey, new JsObject(parameterSeq)))
        })
+       groups += new JsObject(ArrayBuffer[(String,JsValue)]((value.getKey, new JsObject(productSeq))))
     })
-    groupArray
+    new JsArray(groups)
   }
 
   /**
@@ -203,8 +210,6 @@ object ProductController extends BaseController {
     val future: Future[SimpleResult] = solrServer.query(query).flatMap( response => {
       if (query.getRows > 0) {
         processSearchResults(q, response).map { case (found, products, groupSummary) =>
-          var arr:JsArray =  processGroupSummary(groupSummary);
-          println("Output = >   "+Json.stringify(arr))
           if (products != null) {
             if (found > 0) {
               Ok(Json.obj(

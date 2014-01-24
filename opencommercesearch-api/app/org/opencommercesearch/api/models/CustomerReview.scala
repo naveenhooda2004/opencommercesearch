@@ -33,7 +33,7 @@ import org.apache.commons.lang3.StringUtils
 
 case class CustomerReview(
   var count: Option[Int],
-  var average: Option[Float]) { 
+  var average: Option[Double]) { 
     def this() = this(None, None) 
   }  
 

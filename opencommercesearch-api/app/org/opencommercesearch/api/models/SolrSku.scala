@@ -30,7 +30,7 @@ case class SolrSku (
   var isPastSeason: Option[Boolean],
   var isCloseout: Option[Boolean],
   var reviews: Option[Int],
-  var bayesianReviewAverage: Option[Float],
+  var bayesianReviewAverage: Option[Double],
 // @TODO implement a better way to handle site specific properties
   var hasFreeGiftbcs: Option[Boolean]) {
 
